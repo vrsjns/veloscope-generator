@@ -1,0 +1,132 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'packages/**'
+      - 'shared/**'
+      - 'requirements.txt'
+      - '.github/workflows/docker-build.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      batch_prepare: ${{ steps.filter.outputs.batch_prepare }}
+      batch_upload: ${{ steps.filter.outputs.batch_upload }}
+      batch_download: ${{ steps.filter.outputs.batch_download }}
+      shared: ${{ steps.filter.outputs.shared }}
+      requirements: ${{ steps.filter.outputs.requirements }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Need to fetch at least 2 commits to compare changes
+      
+      - name: Filter changed files
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            batch_prepare:
+              - 'packages/batch-prepare/**'
+            batch_upload:
+              - 'packages/batch-upload/**'
+            batch_download:
+              - 'packages/batch-download/**'
+            shared:
+              - 'shared/**'
+            requirements:
+              - 'requirements.txt'
+
+  build-and-push:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+
+    # Only run if at least one component has changed
+    if: ${{ needs.detect-changes.outputs.batch_prepare == 'true' || needs.detect-changes.outputs.batch_upload == 'true' || needs.detect-changes.outputs.batch_download == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.requirements == 'true' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up environment variables
+        run: |
+          echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+          echo "ECR_REPO_PREFIX=veloscope" >> $GITHUB_ENV
+          echo "AWS_ACCOUNT_ID=101617821662" >> $GITHUB_ENV
+
+      - name: Create ECR repositories if they don't exist
+        run: |
+          for repo in prepare-batch upload-batch download-batch; do
+            aws ecr describe-repositories --repository-names $ECR_REPO_PREFIX/$repo > /dev/null 2>&1 || \
+            aws ecr create-repository --repository-name $ECR_REPO_PREFIX/$repo
+          done
+
+      - name: Build and push prepare-batch image
+        if: ${{ needs.detect-changes.outputs.batch_prepare == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.requirements == 'true' }}
+        run: |
+          # Copy shared code into the package directory for Docker build context
+          mkdir -p packages/batch-prepare/shared
+          cp -r shared/* packages/batch-prepare/shared/
+          cp requirements.txt packages/batch-prepare/
+
+          # Build and push
+          docker build -t $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:latest -f packages/batch-prepare/Dockerfile packages/batch-prepare
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:latest
+
+          # Tag with commit SHA for versioning
+          docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:${{ github.sha }}
+
+          echo "Built and pushed prepare-batch image"
+
+      - name: Build and push upload-batch image
+        if: ${{ needs.detect-changes.outputs.batch_upload == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.requirements == 'true' }}
+        run: |
+          # Copy shared code into the package directory for Docker build context
+          mkdir -p packages/batch-upload/shared
+          cp -r shared/* packages/batch-upload/shared/
+          cp requirements.txt packages/batch-upload/
+
+          # Build and push
+          docker build -t $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:latest -f packages/batch-upload/Dockerfile packages/batch-upload
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:latest
+
+          # Tag with commit SHA for versioning
+          docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:${{ github.sha }}
+
+          echo "Built and pushed upload-batch image"
+
+      - name: Build and push download-batch image
+        if: ${{ needs.detect-changes.outputs.batch_download == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.requirements == 'true' }}
+        run: |
+          # Copy shared code into the package directory for Docker build context
+          mkdir -p packages/batch-download/shared
+          cp -r shared/* packages/batch-download/shared/
+          cp requirements.txt packages/batch-download/
+
+          # Build and push
+          docker build -t $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:latest -f packages/batch-download/Dockerfile packages/batch-download
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:latest
+
+          # Tag with commit SHA for versioning
+          docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:${{ github.sha }}
+
+          echo "Built and pushed download-batch image"
