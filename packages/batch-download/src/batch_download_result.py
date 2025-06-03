@@ -12,7 +12,7 @@ from shared.config import (
     ENABLE_FILE_LOGGING
 )
 from shared.utils.logging_utils import configure_logger, add_file_handler
-from shared.utils.control_file_utils import get_control_data, update_control_data, get_pending_batches
+from shared.utils.control_file_utils import get_pending_batches, update_batch_status
 from shared.utils.s3_utils import upload_json_to_s3
 
 # Configure logger
@@ -122,12 +122,7 @@ def process_pending_batches():
             return True
         
         logger.info(f"Found {len(pending_batches)} pending batches to process")
-        
-        control_data = get_control_data()
-        if control_data is None:
-            logger.error("Failed to retrieve control data")
-            return False
-        
+
         success_count = 0
         for batch_info in pending_batches:
             batch_id = batch_info["batch_id"]
@@ -139,30 +134,21 @@ def process_pending_batches():
                 continue
             
             # Update batch status in control data
-            updated = False
-            for i, item in enumerate(control_data):
-                if item["batch_id"] == batch_id:
-                    if batch.status == BATCH_STATUS_COMPLETED:
-                        success = download_and_upload_results(batch, batch_info)
-                        control_data[i]["status"] = STATUS_COMPLETED if success else STATUS_FAILED
-                        if success:
-                            success_count += 1
-                    else:
-                        control_data[i]["status"] = STATUS_FAILED
-                    
-                    control_data[i]["completed_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-                    updated = True
-                    break
+            if batch.status == BATCH_STATUS_COMPLETED:
+                success = download_and_upload_results(batch, batch_info)
+                new_status = STATUS_COMPLETED if success else STATUS_FAILED
+                if success:
+                    success_count += 1
+            else:
+                new_status = STATUS_FAILED
+                
+            # Use update_batch_status instead of direct update
+            additional_data = {"completed_at": datetime.datetime.now(datetime.timezone.utc).isoformat()}
+            update_success = update_batch_status(batch_id=batch_id, new_status=new_status, additional_data=additional_data)
             
-            if not updated:
-                logger.warning(f"Batch {batch_id} not found in control data")
-        
-        # Update control file
-        success = update_control_data(control_data)
-        if not success:
-            logger.error("Failed to update control data in S3")
-            return False
-            
+            if not update_success:
+                logger.warning(f"Failed to update status for batch {batch_id}")
+
         logger.info(f"Successfully processed {success_count} out of {len(pending_batches)} batches")
         return success_count > 0
         

@@ -2,6 +2,7 @@ from ..config import CONTROL_KEY, STATUS_SUBMITTED, STATUS_PREPARED, STATUS_COMP
 from .s3_utils import download_json_from_s3, upload_json_to_s3
 from .logging_utils import configure_logger
 import datetime
+import uuid
 
 # Configure logger
 logger = configure_logger('control_file_utils')
@@ -46,6 +47,63 @@ def get_completed_batches():
 def get_failed_batches():
     """Get batches with 'failed' status"""
     return get_batches_by_status(STATUS_FAILED)
+
+def create_batch(input_file, target_date, status=STATUS_PREPARED, additional_data=None):
+    """
+    Create a new batch entry in the control file
+    
+    Args:
+        input_file: The S3 key of the input file
+        target_date: The target date for the batch
+        status: The initial status of the batch (default: prepared)
+        additional_data: Dictionary of additional fields to include
+    
+    Returns:
+        tuple: (bool, str) - Success status and the generated batch UUID
+    """
+    if not input_file or not target_date:
+        logger.error("Input file and target date must be provided")
+        return False, None
+    
+    # Generate a unique identifier for this batch
+    batch_uuid = str(uuid.uuid4())[:8]  # Use first 8 characters of UUID for brevity
+    
+    try:
+        # Create batch data
+        batch_data = {
+            "batch_uuid": batch_uuid,
+            "input_file": input_file,
+            "target_date": target_date,
+            "status": status,
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "batch_id": None  # Will be populated when submitted to OpenAI
+        }
+        
+        # Add additional data if provided
+        if additional_data and isinstance(additional_data, dict):
+            for key, value in additional_data.items():
+                batch_data[key] = value
+        
+        # Get current control data
+        control_data = get_control_data()
+        if control_data is None:
+            logger.error("Failed to retrieve control data")
+            return False, None
+        
+        # Add new batch to control data
+        control_data.append(batch_data)
+        
+        # Update control file
+        if update_control_data(control_data):
+            logger.info(f"Successfully created new batch for {target_date} (UUID: {batch_uuid})")
+            return True, batch_uuid
+        else:
+            logger.error("Failed to update control data in S3")
+            return False, None
+            
+    except Exception as e:
+        logger.error(f"Error creating batch: {str(e)}")
+        return False, None
 
 def update_batch_status(batch_id=None, s3_key=None, new_status=None, additional_data=None):
     """

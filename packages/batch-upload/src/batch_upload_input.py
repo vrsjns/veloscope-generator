@@ -4,13 +4,12 @@ from shared.config import (
     OPENAI_INPUT_FILE,
     OPENAI_API_KEY,
     OPENAI_COMPLETION_WINDOW,
-    STATUS_PREPARED,
     STATUS_SUBMITTED,
     STATUS_FAILED,
     ENABLE_FILE_LOGGING
 )
 from shared.utils.logging_utils import configure_logger, add_file_handler
-from shared.utils.control_file_utils import get_control_data, update_batch_status
+from shared.utils.control_file_utils import get_prepared_batches, update_batch_status
 from shared.utils.s3_utils import download_file_from_s3
 
 # Configure logger
@@ -29,14 +28,8 @@ except Exception as e:
 
 def upload_jsonl_to_openai():
     try:
-        # Get control data
-        control_data = get_control_data()
-        if control_data is None:
-            logger.error("Failed to retrieve control data")
-            return False
-
-        # Find all prepared batches
-        prepared_batches = [batch for batch in control_data if batch["status"] == STATUS_PREPARED]
+        # Get prepared batches directly using the utility function
+        prepared_batches = get_prepared_batches()
         if not prepared_batches:
             logger.info("No prepared batches found in control file.")
             return False
