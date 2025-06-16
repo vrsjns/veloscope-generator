@@ -172,3 +172,32 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform-*.tfvars
+!terraform.tfvars.example
+.terraformrc
+terraform.rc
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local .terraform directories
+**/.terraform/*
+
+# Crash log files
+crash.*.log
+
+# Exclude sensitive variables files
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Ignore Mac/OSX system files
+.DS_Store

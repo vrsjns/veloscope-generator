@@ -49,6 +49,9 @@ jobs:
     # Only run if at least one component has changed
     if: ${{ needs.detect-changes.outputs.batch_prepare == 'true' || needs.detect-changes.outputs.batch_upload == 'true' || needs.detect-changes.outputs.batch_download == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.requirements == 'true' }}
 
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || (github.ref == 'refs/heads/master' && 'production' || 'development') }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -86,6 +89,10 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:${{ github.sha }}
           docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:${{ github.sha }}
 
+          # Tag with environment
+          docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:$ENVIRONMENT
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/prepare-batch:$ENVIRONMENT
+
           echo "Built and pushed prepare-batch image"
 
       - name: Build and push upload-batch image
@@ -104,6 +111,10 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:${{ github.sha }}
           docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:${{ github.sha }}
 
+          # Tag with environment
+          docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:$ENVIRONMENT
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/upload-batch:$ENVIRONMENT
+
           echo "Built and pushed upload-batch image"
 
       - name: Build and push download-batch image
@@ -121,5 +132,9 @@ jobs:
           # Tag with commit SHA for versioning
           docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:${{ github.sha }}
           docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:${{ github.sha }}
+
+          # Tag with environment
+          docker tag $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:latest $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:$ENVIRONMENT
+          docker push $ECR_REGISTRY/$ECR_REPO_PREFIX/download-batch:$ENVIRONMENT
 
           echo "Built and pushed download-batch image"
