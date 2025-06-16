@@ -19,13 +19,13 @@ jobs:
       batch_download: ${{ steps.filter.outputs.batch_download }}
       shared: ${{ steps.filter.outputs.shared }}
       requirements: ${{ steps.filter.outputs.requirements }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 2  # Need to fetch at least 2 commits to compare changes
-      
+
       - name: Filter changed files
         id: filter
         uses: dorny/paths-filter@v2
@@ -52,7 +52,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 79
+include_trailing_comma = true  # Adds trailing commas to multi-line imports
+force_grid_wrap = 0  # 0 means only wrap when needed
+use_parentheses = true  # Use parentheses for line continuation
+ensure_newline_before_comments = true  # Ensures a newline before comments
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.pylint.messages_control]
+disable = "C0111,C0103"
+
+[tool.bandit]
+exclude_dirs = ["tests"]
