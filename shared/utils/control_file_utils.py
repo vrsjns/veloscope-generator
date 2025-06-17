@@ -40,6 +40,17 @@ def get_control_data() -> Dict[str, Any]:
     if control_data is None:
         logger.info("Control file not found, creating new one")
         control_data = {"batches": []}
+    elif not isinstance(control_data, dict):
+        logger.error(f"Control data is not a dictionary: {type(control_data)}")
+        control_data = {"batches": []}
+    elif "batches" not in control_data:
+        logger.info("'batches' key not found in control data, adding it")
+        control_data["batches"] = []
+    elif not isinstance(control_data["batches"], list):
+        logger.error(
+            f"'batches' is not a list: {type(control_data['batches'])}"
+        )
+        control_data["batches"] = []
 
     return control_data
 

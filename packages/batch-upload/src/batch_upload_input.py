@@ -110,8 +110,10 @@ def upload_jsonl_to_openai() -> bool:
                     endpoint="/v1/chat/completions",
                     completion_window=OPENAI_COMPLETION_WINDOW
                 )
-                batch_id = batch_resp.id
-                logger.info(f"Submitted batch job. Batch ID: {batch_id}")
+                openai_batch_id = batch_resp.id
+                logger.info(
+                    f"Submitted batch job. Batch ID: {openai_batch_id}"
+                )
             except OpenAIError as e:
                 logger.error(f"Failed to submit batch job: {str(e)}")
                 update_batch_status(
@@ -124,10 +126,13 @@ def upload_jsonl_to_openai() -> bool:
 
             # Update batch info in control data
             update_batch_status(
-                batch_id=batch_id,
+                batch_id=batch.get("batch_id"),
                 s3_key=s3_key,
                 new_status=STATUS_SUBMITTED,
-                additional_data={"file_id": file_id}
+                additional_data={
+                    "file_id": file_id,
+                    "openai_batch_id": openai_batch_id
+                }
             )
             success_count += 1
 

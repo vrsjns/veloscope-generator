@@ -202,7 +202,8 @@ def process_pending_batches() -> bool:
             batch_id = batch_info["batch_id"]
             logger.info(f"Processing batch: {batch_id}")
 
-            batch = check_batch_completion(batch_id)
+            openai_batch_id = batch_info["openai_batch_id"]
+            batch = check_batch_completion(openai_batch_id)
             if batch is None:
                 logger.info(f"Batch {batch_id} not ready for processing yet")
                 continue
