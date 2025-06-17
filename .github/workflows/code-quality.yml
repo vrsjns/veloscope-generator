@@ -28,5 +28,6 @@ jobs:
         run: mypy --ignore-missing-imports packages/ shared/
       - name: Security check with bandit
         run: bandit -r packages/ shared/ -x tests/
-      - name: Check dependencies with safety
-        run: safety check
+      # Safety CLI account needed for safety scan
+      # - name: Check dependencies with safety
+      #   run: safety scan
