@@ -11,11 +11,10 @@ This module handles:
 
 import sys
 
-from openai import OpenAI, OpenAIError
+from openai import OpenAIError
 
 from shared.config import (
     ENABLE_FILE_LOGGING,
-    OPENAI_API_KEY,
     OPENAI_COMPLETION_WINDOW,
     OPENAI_INPUT_FILE,
     STATUS_FAILED,
@@ -26,6 +25,7 @@ from shared.utils.control_file_utils import (
     update_batch_status,
 )
 from shared.utils.logging_utils import add_file_handler, configure_logger
+from shared.utils.openai_utils import initialize_openai_client
 from shared.utils.s3_utils import download_file_from_s3
 
 # Configure logger
@@ -35,13 +35,8 @@ if ENABLE_FILE_LOGGING:
 
 
 # ---- Clients ----
-try:
-    client = OpenAI(
-        api_key=OPENAI_API_KEY,
-    )
-except Exception as e:
-    logger.error(f"Failed to initialize clients: {str(e)}")
-    sys.exit(1)
+# Initialize OpenAI client
+client = initialize_openai_client()
 
 
 def upload_jsonl_to_openai() -> bool:

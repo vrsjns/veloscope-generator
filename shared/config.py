@@ -16,6 +16,7 @@ provided for development environments.
 
 import os
 import tempfile  # Add this import at the top of the file
+from typing import Literal
 
 from dotenv import load_dotenv
 
@@ -33,7 +34,7 @@ RIDERS_FILE = os.getenv("RIDERS_FILE", "riders.json")
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-nano")
-OPENAI_COMPLETION_WINDOW = "24h"
+OPENAI_COMPLETION_WINDOW: Literal["24h"] = "24h"
 
 # AWS Configuration
 AWS_REGION = os.getenv("AWS_REGION", "eu-central-1")

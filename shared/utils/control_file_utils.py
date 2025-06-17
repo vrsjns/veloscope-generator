@@ -168,12 +168,14 @@ def create_batch(
         control_data["batches"].append(batch_entry)
 
         # Update the control file
+        # pylint: disable=R1705
         if update_control_data(control_data):
             logger.info(f"Created new batch with ID: {batch_id}")
             return True, batch_id
         else:
             logger.error("Failed to create batch")
             return False, None
+        # pylint: enable=R1705
 
     except Exception as e:
         logger.error(f"Error creating batch: {str(e)}")

@@ -18,8 +18,12 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
+[[tool.mypy.overrides]]
+module = "boto3.*"
+ignore_missing_imports = true
+
 [tool.pylint.messages_control]
-disable = "C0111,C0103"
+disable = "C0111,C0103,W1203,W0718,R1705"
 
 [tool.bandit]
 exclude_dirs = ["tests"]

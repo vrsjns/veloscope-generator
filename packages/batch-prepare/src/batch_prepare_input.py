@@ -106,16 +106,16 @@ def generate_jsonl() -> Tuple[Optional[str], Optional[str]]:
                     sign = get_zodiac_sign(birthdate)
 
                     prompt = (
-                        "Generate a daily horoscope for {name}, whose zodiac "
-                        "sign is {sign}, for the date {target_date}. "
-                        "Make it friendly, encouraging, personalized and a "
-                        "little bit mystical. Do not include astrological "
-                        "terms. Keep it under 3 sentences and feel free to "
-                        "use some cycling jargon, but not too much. "
-                        "Don't forget some advice for personal life or for "
-                        "race recovery, maybe some improvement in "
-                        "technical setup or strategic planning or nutrition. "
-                    ).format(name=name, sign=sign, target_date=target_date)
+                        f"Generate a daily horoscope for {name}, whose zodiac "
+                        f"sign is {sign}, for the date {target_date}. "
+                        f"Make it friendly, encouraging, personalized and a "
+                        f"little bit mystical. Do not include astrological "
+                        f"terms. Keep it under 3 sentences and feel free to "
+                        f"use some cycling jargon, but not too much. "
+                        f"Don't forget some advice for personal life or for "
+                        f"race recovery, maybe some improvement in "
+                        f"technical setup or strategic planning or nutrition. "
+                    )
 
                     request = {
                         "custom_id": f"{name}",
@@ -178,8 +178,8 @@ def generate_jsonl() -> Tuple[Optional[str], Optional[str]]:
 
 
 if __name__ == "__main__":
-    jsonl_key, target_date = generate_jsonl()
-    if jsonl_key and target_date:
+    batch_jsonl_key, batch_target_date = generate_jsonl()
+    if batch_jsonl_key and batch_target_date:
         logger.info("Batch preparation completed successfully")
         sys.exit(0)
     else:
