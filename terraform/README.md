@@ -20,10 +20,10 @@ This directory contains the Terraform configurations for the Veloscope project.
     ```bash
     # Create S3 bucket for Terraform state
     aws s3 mb s3://veloscope-terraform-state --region [YOUR_AWS_REGION]
-    
+
     # Enable versioning on the S3 bucket
     aws s3api put-bucket-versioning --bucket veloscope-terraform-state --versioning-configuration Status=Enabled
-    
+
     # Create DynamoDB table for state locking
     aws dynamodb create-table \
       --table-name veloscope-terraform-locks \

@@ -1,73 +1,89 @@
-import logging
-import sys
-import os
-from ..config import ENV
+"""
+Utility module for configuring and managing logging.
 
-def configure_logger(name, log_level=None):
+This module provides functions to set up logging with consistent formatting
+across different components of the application, including console and file
+logging options.
+"""
+
+import logging
+import os
+from datetime import datetime
+
+from ..config import LOG_DIR, LOG_LEVEL
+
+
+def configure_logger(name: str) -> logging.Logger:
     """
-    Configure and return a logger with consistent formatting
-    
+    Configure a logger with the specified name.
+
+    Sets up a logger with consistent formatting for console output and
+    returns it for use in the application.
+
     Args:
-        name (str): Name of the logger, typically the module name
-        log_level (int, optional): Logging level. Defaults to INFO in production, DEBUG otherwise.
-    
+        name (str): The name of the logger, typically the module name.
+
     Returns:
-        logging.Logger: Configured logger instance
+        logging.Logger: A configured logger instance.
     """
-    # Determine log level based on environment if not specified
-    if log_level is None:
-        log_level = logging.INFO if ENV == "production" else logging.DEBUG
-    
     # Create logger
     logger = logging.getLogger(name)
-    logger.setLevel(log_level)
-    
-    # Clear existing handlers to avoid duplicate logs
-    if logger.hasHandlers():
+    logger.setLevel(getattr(logging, LOG_LEVEL))
+
+    # Clear existing handlers to avoid duplicates
+    if logger.handlers:
         logger.handlers.clear()
-    
+
     # Create console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(log_level)
-    
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(getattr(logging, LOG_LEVEL))
+
     # Create formatter
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+
+    # Add formatter to console handler
     console_handler.setFormatter(formatter)
-    
-    # Add handler to logger
+
+    # Add console handler to logger
     logger.addHandler(console_handler)
-    
+
     return logger
 
-# Optional: Add file logging capability
-def add_file_handler(logger, log_dir="/tmp/logs", log_file=None):
+
+def add_file_handler(logger: logging.Logger) -> None:
     """
-    Add a file handler to the logger
-    
+    Add a file handler to an existing logger.
+
+    Creates a log file in the configured directory with a timestamp in the
+    filename and adds a handler to write log messages to this file.
+
     Args:
-        logger (logging.Logger): Logger to add file handler to
-        log_dir (str): Directory to store log files
-        log_file (str, optional): Log file name. Defaults to logger name + .log
+        logger (logging.Logger): The logger to add the file handler to.
+
+    Returns:
+        None
     """
-    if log_file is None:
-        log_file = f"{logger.name}.log"
-    
-    # Create log directory if it doesn't exist
-    os.makedirs(log_dir, exist_ok=True)
-    
+    # Ensure log directory exists
+    os.makedirs(LOG_DIR, exist_ok=True)
+
+    # Create log filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_file = os.path.join(LOG_DIR, f"{logger.name}-{timestamp}.log")
+
     # Create file handler
-    file_handler = logging.FileHandler(os.path.join(log_dir, log_file))
-    file_handler.setLevel(logger.level)
-    
-    # Use the same formatter as console handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(getattr(logging, LOG_LEVEL))
+
+    # Create formatter
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+
+    # Add formatter to file handler
     file_handler.setFormatter(formatter)
-    
-    # Add handler to logger
+
+    # Add file handler to logger
     logger.addHandler(file_handler)
+    logger.info(f"Logging to file: {log_file}")

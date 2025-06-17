@@ -128,7 +128,7 @@ resource "aws_cloudwatch_dashboard" "batch_dashboard" {
 
 resource "aws_sns_topic" "batch_alerts" {
   name = "veloscope-${var.environment}-batch-alerts"
-  
+
   tags = {
     Environment = var.environment
     ManagedBy   = "terraform"
