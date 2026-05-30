@@ -12,7 +12,7 @@ This module prepares JSONL files for OpenAI batch processing by:
 import json
 import sys
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional, Tuple
 
 from shared.config import (
@@ -37,17 +37,15 @@ def get_zodiac_sign(birthdate: str) -> str:
     Determine zodiac sign based on birthdate.
 
     Args:
-        birthdate (str): Birthdate in MM/DD/YYYY format.
+        birthdate (str): Birthdate in ISO ``YYYY-MM-DD`` format.
 
     Returns:
         str: The zodiac sign or "Unknown" if parsing fails.
     """
     try:
-        month_str = birthdate[0:2]  # Extract "MM" part
-        day_str = birthdate[3:5]    # Extract "DD" part
-
-        month = int(month_str)
-        day = int(day_str)
+        parsed = datetime.strptime(birthdate, "%Y-%m-%d").date()
+        month = parsed.month
+        day = parsed.day
 
         zodiac = [
             ((1, 20), "Aquarius"), ((2, 19), "Pisces"), ((3, 21), "Aries"),
